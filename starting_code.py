@@ -273,6 +273,11 @@ def check_pred_arg_compatibility(sentence, predicate, arguments):
             # check if the argument given can appear as actor
             arg_config.extend([[arg] for arg in arguments if "actor" in arg_lexicon.get(sentence[arg])["mr"]
                                and arg != predicate])
+            # only undergoer as in "the window breaks"
+            if len(arg_config) < 1:
+                arg_config.extend([[-1, arg] for arg in arguments if "undergoer" in arg_lexicon.get(sentence[arg])["mr"]
+                                   and arg != predicate])
+
         if mr == 2:
             # check which of the arguments can appear as actor and/or undergoer
             if len(arguments) < 2:
