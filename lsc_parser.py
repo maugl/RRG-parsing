@@ -1,5 +1,6 @@
 from copy import deepcopy
-
+from rrg_earley_parser import Symbol
+from rrg_earley_parser import RRG_earley_parser
 
 class Template:
     def __init__(self, name=None, children=None):
@@ -45,10 +46,31 @@ def generate_rules(templates):
     for temp in templates:
         rules.add((temp.name, tuple([ch.name for ch in temp.children])))
         for ch in temp.children:
-            if not ch.is_leaf:
+            if not ch.is_leaf():
                 rules.union(generate_rules(ch.children))
     return rules
 
+
+def generate_grammar(temps, all_temps=None, ind=None):
+    rules = list()
+    all_temps = temps if all_temps is None else all_temps
+
+    for i, temp in enumerate(temps):
+        index = i if ind is None else ind
+
+        left_side = [Symbol(temp.name, is_terminal=False)]
+        right_side = [Symbol(ch.name, is_terminal=ch.is_leaf() and not
+        max([ch.get_name() == atemp.get_name() for atemp in all_temps])) for ch in temp.children]
+        gen_rule = (left_side, right_side, index)
+        if gen_rule not in rules:
+            rules.append(gen_rule)
+        for ch in temp.children:
+            if not ch.is_leaf():
+                new_rules = generate_grammar([ch], all_temps, ind=index)
+                for r in new_rules:
+                    if r not in rules:
+                        rules.append(r)
+    return rules
 
 if __name__ == "__main__":
     templates = list()
@@ -68,7 +90,21 @@ if __name__ == "__main__":
     for t in templates:
         print(t.tostr())
 
-    print(generate_rules(templates))
+    grammar = generate_grammar(templates)
+
+    for rule in grammar:
+        print(rule)
+
+    parser = RRG_earley_parser(grammar, Symbol("SENTENCE"))
+    parser.initiate()
+
+    print(parser.G)
+    print(parser.terminals)
+    print(parser.non_terminals)
+
+
+    parser.recognizer(["V", "N"])
+
 
     """
     print(templates[0].subsume_template(templates[1]))

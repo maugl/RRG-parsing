@@ -1,5 +1,6 @@
 import argparse
-
+import lsc_parser
+import rrg_earley_parser
 
 class Lexicon:
     def __init__(self):

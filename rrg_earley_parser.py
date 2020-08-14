@@ -60,13 +60,14 @@ class RRG_earley_parser:
         self.state_set = list()  # nested lists one state list for each step in the recognition process
         self.G = grammar  # list of productions: [([symb], [symb, symb]), ([symb], [symb, symb, symb])]
         self.terminals = list()
-        self.terminals = list(set([symbol for prod in grammar for side in prod for symbol in side if
+        self.terminals = list(set([symbol for prod in grammar for side in prod[:2] for symbol in side if
                                    symbol.is_terminal]))
-        self.non_terminals = list(set([symbol for prod in grammar for side in prod for symbol in side if
+        self.non_terminals = list(set([symbol for prod in grammar for side in prod[:2] for symbol in side if
                                        symbol.is_non_terminal]))
         self.end_symbol = end_symbol
         self.start_symbol = start_symbol
         self.root = root
+        self.last_parse = None
 
     def initiate(self):
         # create start_symbol for grammar
@@ -85,6 +86,7 @@ class RRG_earley_parser:
 
         # add start_symbol
         self.non_terminals.append(self.start_symbol)
+        self.last_parse = None
 
     def recognizer(self, input_string):
         self.X = [Symbol(w, is_terminal=True) for w in input_string] + [self.end_symbol] # input sequence
@@ -116,13 +118,16 @@ class RRG_earley_parser:
                 print(str(r), st, st.is_final())
 
             if len(self.state_set[i]) == 0:
+                self.last_parse = False
                 return False
 
             if i == len(self.X) and self.state_set[i][0] == end_state:
+                self.last_parse = True
                 return True
         print("done")
         print("states " + str(i))
         print(self.state_set[i + 1][0])
+        self.last_parse = False
         return False
 
     def predictor(self, state, X_index):
@@ -180,14 +185,75 @@ class RRG_earley_parser:
                         idx = self.state_set[X_index].index(new_state)
                         self.state_set[X_index][idx].parent.append(parent_idx)
 
+    def get_parse_tree(self):
+        if self.state_set is None:
+            return None
+
+        if not self.last_parse:
+            return None
+
+        print("used states")
+        parse_tree = list()
+        ind = (len(parser.state_set) - 1, 0)
+        parents = [parser.state_set[-1][-1]]
+        i = 0
+        while parents:
+            s = parents.pop()
+            if s.is_final():
+                parse_tree.append(s)
+
+            if s.parent is None:
+                break
+            for ind in s.parent:
+                parents.append(parser.state_set[ind[0]][ind[1]])
+
+        return parse_tree
+
+    def get_parse_trees(self):
+        if self.state_set is None:
+            return None
+
+        if not self.last_parse:
+            return None
+
+        print("used states")
+        parse_tree = list()
+        ind = (len(parser.state_set) - 1, 0)
+        parents = [[parser.state_set[-1][-1]]]
+        parses = [list()]
+        i = 0
+        while len(parents[i]) > 0:
+            s = parents[i].pop()
+            if s.is_final():
+                parses[i].append(s)
+
+            if s.parent is None:
+                if i + 1 < len(parents):
+                    i += 1
+                    continue
+                else:
+                    break
+
+            for j, ind in enumerate(s.parent):
+                if j == 0:
+                    parents[i].append(parser.state_set[ind[0]][ind[1]])
+                elif s.is_final():
+                    parses.append(deepcopy(parses[i][:-1]))
+                    parents.append(deepcopy(parents[i][:-1]))
+                    parents[-1].append(parser.state_set[ind[0]][ind[1]])
+                else:
+                    parents[i].append(parser.state_set[ind[0]][ind[1]])
+
+        return parses
+
 
 if __name__ == "__main__":
-    """
+
     grammar = [
         ([Symbol("A")], [Symbol("A"), Symbol("A")]),
         ([Symbol("A")], [Symbol("x", is_terminal=True)])
     ]
-    """
+
     """
     grammar = [
         ([Symbol("E")], [Symbol("E"), Symbol("+", is_terminal=True), Symbol("T")]),
@@ -197,16 +263,18 @@ if __name__ == "__main__":
         ([Symbol("P")], [Symbol("a", is_terminal=True)])
     ]
     """
+    """
     grammar = [
-        ([Symbol("K")], []),
-        ([Symbol("K")], [Symbol("K"), Symbol("J")]),
-        ([Symbol("J")], [Symbol("F")]),
-        ([Symbol("J")], [Symbol("I")]),
-        ([Symbol("F")], [Symbol("x", is_terminal=True)]),
-        ([Symbol("I")], [Symbol("x", is_terminal=True)])
+        ([Symbol("K")], [], 0),
+        ([Symbol("K")], [Symbol("K"), Symbol("J")], 1),
+        ([Symbol("J")], [Symbol("F")], 1),
+        ([Symbol("J")], [Symbol("I")], 1),
+        ([Symbol("F")], [Symbol("x", is_terminal=True)], 2),
+        ([Symbol("I")], [Symbol("x", is_terminal=True)], 3)
     ]
+    """
 
-    parser = RRG_earley_parser(grammar, Symbol("K"))
+    parser = RRG_earley_parser(grammar, Symbol("A"))
     parser.initiate()
     """
     print(parser.X)
@@ -214,19 +282,14 @@ if __name__ == "__main__":
     print(parser.terminals)
     print(parser.non_terminals)
     """
-    recognized = parser.recognizer(["x", "x"])
+    recognized = parser.recognizer(["x", "x", "x"])
     print(recognized)
 
-    if recognized:
-        print("used states")
-        ind = (len(parser.state_set) - 1, 0)
-        parents = [parser.state_set[-1][-1]]
-        while parents:
-            s = parents.pop()
-            if s.is_final():
-                print(s)
+    parse_trees = parser.get_parse_trees()
 
-            if s.parent is None:
-                break
-            for ind in s.parent:
-                parents.append(parser.state_set[ind[0]][ind[1]])
+    print("used states multi")
+
+    for parse_tree in parse_trees:
+        print("new tree")
+        for rule in parse_tree:
+            print(rule)
