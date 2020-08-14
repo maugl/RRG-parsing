@@ -18,14 +18,18 @@ class Lexicon:
         else:
             return self.get(word)["type"]
 
+
 # first only encode number of arguments/macro-roles
 pred_lexicon = Lexicon()
 pred_lexicon.data = {
-    "run": {"lemma": "run", "mr": [1, 2], "type": "V", "pred": ["run", "be-LOC"], "act_art": {"ACTIVITY": [0, 1], "ACTIVE_ACCOMPLISHMENT": [0]}},
+    "run": {"lemma": "run", "mr": [1, 2], "type": "V", "pred": ["run", "be-LOC"],
+            "act_art": {"ACTIVITY": [0, 1], "ACTIVE_ACCOMPLISHMENT": [0]}},
     "runs": "run",  # variant: reference to entry, can be used to define operators (tense, aspect,...)
-    "drive": {"lemma": "drive", "mr": [1, 2], "type": "V", "pred": ["drive", "be-LOC"], "act_art": {"ACTIVITY": [0, 1], "ACTIVE_ACCOMPLISHMENT": [0]}},
+    "drive": {"lemma": "drive", "mr": [1, 2], "type": "V", "pred": ["drive", "be-LOC"],
+              "act_art": {"ACTIVITY": [0, 1], "ACTIVE_ACCOMPLISHMENT": [0]}},
     "drives": "drive",
-    "eat": {"lemma": "eat", "mr": [1, 2], "type": "V", "pred": ["eat", "consumed"], "act_art": {"ACTIVITY": [1], "ACTIVE_ACCOMPLISHMENT": [1]}},
+    "eat": {"lemma": "eat", "mr": [1, 2], "type": "V", "pred": ["eat", "consumed"],
+            "act_art": {"ACTIVITY": [1], "ACTIVE_ACCOMPLISHMENT": [1]}},
     "carry": {"lemma": "carry", "mr": [2], "type": "V", "pred": ["carry"], "act_art": {"ACTIVITY": [1]}},
     "carries": "carry",
     "do": {"lemma": "do", "mr": [2], "type": "V", "pred": ["do"], "act_art": {"ACTIVITY": [1]}},
@@ -41,7 +45,7 @@ arg_lexicon.data = {
           "thematic_role": ["EFFECTOR", "MOVER", "ST-MOVER", "S-EMITTER", "PERFORMER", "CONSUMER", "CREATOR",
                             "OBSERVER", "USER", "PERCEIVER", "COGNIZER", "WANTER", "JUDGER", "POSSESSOR",
                             "EXPERIENCER", "EMOTER"]
-          }, # not correct, but used for development purposes
+          },  # not correct, but used for development purposes
     "he": {"lemma": "he", "mr": ["actor"], "type": "N",
            "thematic_role": ["EFFECTOR", "MOVER", "ST-MOVER", "S-EMITTER", "PERFORMER", "CONSUMER", "CREATOR",
                              "OBSERVER", "USER", "PERCEIVER", "COGNIZER", "WANTER", "JUDGER", "POSSESSOR",
@@ -60,8 +64,8 @@ arg_lexicon.data = {
            },
     "her": {"lemma": "her", "mr": ["undergoer"], "type": "N",
             "thematic_role": ["ATTRIBUTANT", "IDENTIFIED", "VARIABLE", "THEME", "STIMULUS", "CONTENT", "DESIRE",
-                             "JUDGMENT", "POSSESSED", "SENSATION", "TARGET", "ATTRIBUTE", "IDENTITY", "VALUE",
-                             "PERFORMANCE", "CONSUMED", "CREATION", "PATIENT", "ENTITY"]
+                              "JUDGMENT", "POSSESSED", "SENSATION", "TARGET", "ATTRIBUTE", "IDENTITY", "VALUE",
+                              "PERFORMANCE", "CONSUMED", "CREATION", "PATIENT", "ENTITY"]
             },
     "run": {"lemma": "run", "mr": ["actor", "undergoer"], "type": "N",
             "thematic_role": ["EFFECTOR", "LOCATION", "ATTRIBUTANT", "IDENTIFIED", "VARIABLE", "THEME",
@@ -71,8 +75,8 @@ arg_lexicon.data = {
     "runs": "run",
     "race": {"lemma": "race", "mr": ["actor", "undergoer"], "type": "N",
              "thematic_role": ["EFFECTOR", "LOCATION", "ATTRIBUTANT", "IDENTIFIED", "VARIABLE", "THEME",
-                              "CONTENT", "TARGET", "ATTRIBUTE", "IDENTITY", "VALUE", "CREATION", "IMPLEMENT",
-                              "PATIENT", "ENTITY"]
+                               "CONTENT", "TARGET", "ATTRIBUTE", "IDENTITY", "VALUE", "CREATION", "IMPLEMENT",
+                               "PATIENT", "ENTITY"]
              },
     "man": {"lemma": "man", "mr": ["actor", "undergoer"], "type": "N",
             "thematic_role": ["EFFECTOR", "MOVER", "ST-MOVER", "S-EMITTER", "PERFORMER", "CONSUMER",
@@ -81,7 +85,11 @@ arg_lexicon.data = {
                               "CONTENT", "DESIRE", "POSSESSED", "TARGET", "ATTRIBUTE", "IDENTITY",
                               "VALUE", "PERFORMANCE", "CONSUMED", "CREATION", "IMPLEMENT", "PATIENT", "ENTITY"]
             },
-    "window": {"lemma": "window", "mr": ["undergoer"], "type": "N"}
+    "window": {"lemma": "window", "mr": ["undergoer"], "type": "N",
+               "thematic_role": ["ATTRIBUTANT", "IDENTIFIED", "VARIABLE", "THEME", "STIMULUS", "CONTENT", "DESIRE",
+                                 "JUDGMENT", "POSSESSED", "SENSATION", "TARGET", "ATTRIBUTE", "IDENTITY", "VALUE",
+                                 "PERFORMANCE", "CONSUMED", "CRETIAON", "PATIENT", "ENTITY"]
+               }
 }
 
 aktionsart = {
@@ -179,7 +187,6 @@ thematic_relations = {
     }
 }
 
-
 operator_lexicon = {"will"}
 
 
@@ -187,7 +194,7 @@ def parse_sentence(sentence, approach="max"):
     words = split_sentence(sentence)
     comp_pred = find_pred_args(words)
 
-    #print("compatibilities and predicates {}:".format(comp_pred))
+    # print("compatibilities and predicates {}:".format(comp_pred))
 
     # only allow for compatibilities which make use of all the arguments?
     # refine compatibilities with other means? (compare to LSC, more semantic information,...)
@@ -220,7 +227,8 @@ def parse_sentence(sentence, approach="max"):
                 if -1 < v < len(labels):
                     labels[v] = k
 
-            types = [pred_lexicon.get_type(w) if l == "PRED" else arg_lexicon.get_type(w) for w, l in zip(words, labels)]
+            types = [pred_lexicon.get_type(w) if l == "PRED" else arg_lexicon.get_type(w) for w, l in
+                     zip(words, labels)]
 
             yield words, labels, types
 
@@ -229,19 +237,19 @@ def split_sentence(text):
     split_text = text.split(" ")
     split_text = [w.strip(".").lower() for w in split_text]
     return split_text
-    
+
 
 def find_pred_args(sentence):
     # first find predicate canditates in list
     pred_candidate_ind = [i for i, w in enumerate(sentence) if w in pred_lexicon.data]
     # refine
     sent_args_ind = find_args(sentence)
-    #args = [sentence[i] for i in sent_args_ind]
+    # args = [sentence[i] for i in sent_args_ind]
     compatibilities = list()
     # check if predicate can appear with possible arguments
     for i in pred_candidate_ind:
         compatibilities.append(check_pred_arg_compatibility(sentence, i, sent_args_ind))
-        #compatibilities.append(check_pred_arg_compatibility_thematic(sentence, i, sent_args_ind))
+        # compatibilities.append(check_pred_arg_compatibility_thematic(sentence, i, sent_args_ind))
 
     # if there are no compatibilities for one pred, eliminate
     comp_pred = [(comp, pred) for comp, pred in zip(compatibilities, pred_candidate_ind) if len(comp) > 0]
@@ -250,11 +258,11 @@ def find_pred_args(sentence):
 
 
 def find_args(sentence):
-
     args_ind = [i for i, w in enumerate(sentence) if w in arg_lexicon.data]
 
-    #print("args_ind: {}".format(args_ind))
+    # print("args_ind: {}".format(args_ind))
     return args_ind
+
 
 def check_pred_arg_compatibility(sentence, predicate, arguments):
     """ Simple approach determining if predicates and arguments are compatible based on
@@ -267,7 +275,7 @@ def check_pred_arg_compatibility(sentence, predicate, arguments):
     """
     arg_config = list()
 
-    #print("arguments_ind: {}".format(arguments))
+    # print("arguments_ind: {}".format(arguments))
     for mr in pred_lexicon.get(sentence[predicate])["mr"]:
         if mr == 1:
             # check if the argument given can appear as actor
@@ -290,6 +298,7 @@ def check_pred_arg_compatibility(sentence, predicate, arguments):
     print("arg_config: " + str(arg_config))
 
     return arg_config
+
 
 def check_pred_arg_compatibility_thematic(sentence, predicate, arguments):
     """ approach for determining if predicates and arguments are compatible based on
@@ -324,15 +333,15 @@ def check_pred_arg_compatibility_thematic(sentence, predicate, arguments):
         # print(sem_rep)
         for log, them_rel in thematic_relations.items():
             if num_mr == 1:
-                    # get actors and undergoers for semantic representation
-                    if sem_rep.startswith(log):
-                        if "actor" in them_rel:
-                            actor_roles[-1].extend(them_rel["actor"])
-                            sem_rep = sem_rep.strip(log)
-                        # in case no activity predicate is found
-                        if "undergoer" in them_rel and len(actor_roles[-1]) < 1:
-                            undergoer_roles[-1].extend(them_rel["undergoer"] if "undergoer" in them_rel else [])
-                            sem_rep = sem_rep.strip(log)
+                # get actors and undergoers for semantic representation
+                if sem_rep.startswith(log):
+                    if "actor" in them_rel:
+                        actor_roles[-1].extend(them_rel["actor"])
+                        sem_rep = sem_rep.strip(log)
+                    # in case no activity predicate is found
+                    if "undergoer" in them_rel and len(actor_roles[-1]) < 1:
+                        undergoer_roles[-1].extend(them_rel["undergoer"] if "undergoer" in them_rel else [])
+                        sem_rep = sem_rep.strip(log)
             if num_mr == 2:
                 if sem_rep.startswith(log):
                     actor_roles[-1].extend(them_rel["actor"] if "actor" in them_rel else [])
@@ -348,7 +357,8 @@ def check_pred_arg_compatibility_thematic(sentence, predicate, arguments):
         if num_mr == 2:
             arg_config.extend([[arg1, arg2] for arg1, arg2 in zip(arguments, arguments[::-1]) if
                                max([r in arg_lexicon.get(sentence[arg1])["thematic_role"] for r in actor_roles[-1]])
-                               and max([r in arg_lexicon.get(sentence[arg2])["thematic_role"] for r in undergoer_roles[-1]])
+                               and max(
+                                   [r in arg_lexicon.get(sentence[arg2])["thematic_role"] for r in undergoer_roles[-1]])
                                and arg1 != predicate and arg2 != predicate and arg1 != arg2
                                and [arg1, arg2] not in arg_config])
     """
@@ -359,6 +369,7 @@ def check_pred_arg_compatibility_thematic(sentence, predicate, arguments):
     """
 
     return arg_config
+
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description='Parse sentences in RRG.')

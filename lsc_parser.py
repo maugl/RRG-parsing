@@ -49,6 +49,7 @@ def generate_rules(templates):
                 rules.union(generate_rules(ch.children))
     return rules
 
+
 if __name__ == "__main__":
     templates = list()
     templates.append(Template("SENTENCE", [Template("LDP"), Template("CLAUSE")]))
