@@ -16,7 +16,7 @@ class State:
         return self.j == len(self.production[1])
 
     def __eq__(self, other):
-        return type(other) is type(self) and self.p == other.p and self.j == other.j and self.f == other.f
+        return type(other) is type(self) and self.production == other.production and self.p == other.p and self.j == other.j and self.f == other.f
 
     def __str__(self):
         """
@@ -90,10 +90,10 @@ class RRG_earley_parser:
 
     def recognizer(self, input_string):
         self.X = [Symbol(w, is_terminal=True) for w in input_string] + [self.end_symbol] # input sequence
-        start_production = ([self.start_symbol], [self.root, self.end_symbol])
+        start_production = ([self.start_symbol], [self.root, self.end_symbol], -1)
         self.G.append(start_production)
 
-        print(self.G)
+        # print(self.G)
 
         self.state_set = list(list() for _ in range(len(self.X) + 1))
         self.state_set[0].append(State(start_production, -1, 0, 0, "init"))
@@ -113,9 +113,9 @@ class RRG_earley_parser:
                 else:
                     self.completer(s, i)
                 z += 1
-            print("states " + str(i))
-            for r, st in enumerate(self.state_set[i]):
-                print(str(r), st, st.is_final())
+            # print("states " + str(i))
+            # for r, st in enumerate(self.state_set[i]):
+            #    print(str(r), st, st.is_final())
 
             if len(self.state_set[i]) == 0:
                 self.last_parse = False
@@ -124,27 +124,15 @@ class RRG_earley_parser:
             if i == len(self.X) and self.state_set[i][0] == end_state:
                 self.last_parse = True
                 return True
-        print("done")
-        print("states " + str(i))
-        print(self.state_set[i + 1][0])
+        # print("done")
+        # print("states " + str(i))
+        # print(self.state_set[i + 1][0])
         self.last_parse = False
         return False
 
     def predictor(self, state, X_index):
         new_productions = [(q, prod) for q, prod in enumerate(self.G) if state.production[1][state.j] == prod[0][0]]
         beta = list() # criterion for lookahead, Earley p.97 ????
-
-        """
-        if len(state.production[1]) > state.j+1+k:
-            for symb in state.production[1][state.j+1:state.j+1+k]:
-                if symb.is_terminal:
-                    beta.append(symb)
-                else:
-                    beta = state.alpha
-                    break
-        else:
-            beta = state.alpha
-        """
 
         for q, prod in new_productions:
             new_state = State(prod, q, 0, X_index, "pred")
@@ -192,10 +180,10 @@ class RRG_earley_parser:
         if not self.last_parse:
             return None
 
-        print("used states")
+        # print("used states")
         parse_tree = list()
-        ind = (len(parser.state_set) - 1, 0)
-        parents = [parser.state_set[-1][-1]]
+        ind = (len(self.state_set) - 1, 0)
+        parents = [self.state_set[-1][-1]]
         i = 0
         while parents:
             s = parents.pop()
@@ -205,7 +193,7 @@ class RRG_earley_parser:
             if s.parent is None:
                 break
             for ind in s.parent:
-                parents.append(parser.state_set[ind[0]][ind[1]])
+                parents.append(self.state_set[ind[0]][ind[1]])
 
         return parse_tree
 
@@ -216,10 +204,10 @@ class RRG_earley_parser:
         if not self.last_parse:
             return None
 
-        print("used states")
+        # print("used states")
         parse_tree = list()
-        ind = (len(parser.state_set) - 1, 0)
-        parents = [[parser.state_set[-1][-1]]]
+        ind = (len(self.state_set) - 1, 0)
+        parents = [[self.state_set[-1][-1]]]
         parses = [list()]
         i = 0
         while len(parents[i]) > 0:
@@ -236,15 +224,73 @@ class RRG_earley_parser:
 
             for j, ind in enumerate(s.parent):
                 if j == 0:
-                    parents[i].append(parser.state_set[ind[0]][ind[1]])
+                    parents[i].append(self.state_set[ind[0]][ind[1]])
                 elif s.is_final():
-                    parses.append(deepcopy(parses[i][:-1]))
+                    parses.append(deepcopy(parses[i]))
                     parents.append(deepcopy(parents[i][:-1]))
-                    parents[-1].append(parser.state_set[ind[0]][ind[1]])
+                    parents[-1].append(self.state_set[ind[0]][ind[1]])
                 else:
-                    parents[i].append(parser.state_set[ind[0]][ind[1]])
+                    parents[i].append(self.state_set[ind[0]][ind[1]])
 
         return parses
+
+    def get_parse_trees_templates(self, templates):
+        if self.state_set is None:
+            return None
+
+        if not self.last_parse:
+            return None
+
+        # print("used states")
+        parse_tree = list()
+        ind = (len(self.state_set) - 1, 0)
+        parents = [[self.state_set[-1][-1]]]
+        parses = [list()]
+        i = 0
+        while len(parents[i]) > 0:
+            s = parents[i].pop()
+            if s.is_final():
+                parses[i].append(s)
+
+            if s.parent is None:
+                if i + 1 < len(parents):
+                    i += 1
+                    continue
+                else:
+                    break
+
+            for j, ind in enumerate(s.parent):
+                par = self.state_set[ind[0]][ind[1]]
+                if s.production[2] == -1 or par.production[2] == s.production[2] or \
+                        templates[par.production[2]].name in [ch.name for ch in templates[s.production[2]].get_leaves()] or\
+                        templates[s.production[2]].name in [ch.name for ch in templates[par.production[2]].get_leaves()]:
+                    if j == 0:
+                        parents[i].append(par)
+                    else:
+                        parses.append(deepcopy(parses[i]))
+                        parents.append(deepcopy(parents[i][:-1]))
+                        parents[-1].append(par)
+
+
+        trees = list()
+        for parse in parses:
+            # filter out artificially added start state
+            parse = [s for s in parse if s.production[2] > -1]
+            temps = [templates[s.production[2]] for s in parse]
+            tree = temps[0]
+            for temp in temps[1:]:
+                # print(tree, temp)
+                tree.subsume_template(temp)
+            trees.append(tree)
+
+        ret_trees = list()
+        ret_parses = list()
+        for p, t in zip(parses, trees):
+            if t not in ret_trees:
+                ret_trees.append(t)
+                ret_parses.append(p)
+
+        return ret_parses, ret_trees
 
 
 if __name__ == "__main__":

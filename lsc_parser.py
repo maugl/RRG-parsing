@@ -13,6 +13,15 @@ class Template:
     def get_name(self):
         return self.name
 
+    def get_leaves(self):
+        leaves = list()
+        for ch in self.children:
+            if ch.is_leaf():
+                leaves.append(ch)
+            else:
+                leaves.extend(ch.get_leaves())
+        return leaves
+
     def add_child(self, child):
         assert(type(child) is Template)
         self.children.append(child)
@@ -23,7 +32,7 @@ class Template:
 
     def subsume_template(self, template):
         for i, ch in enumerate(self.children):
-            if ch.is_leaf:
+            if ch.is_leaf():
                 if ch.get_name() == template.get_name():
                     self.children[i] = template
                     return True
@@ -39,6 +48,9 @@ class Template:
 
     def tostr(self):
         return [self.name, [ch.tostr() for ch in self.children]]
+
+    def __str__(self):
+        return str([self.name, [ch.tostr() for ch in self.children]])
 
 
 def generate_rules(templates):
@@ -87,23 +99,33 @@ if __name__ == "__main__":
     templates.append(Template("RP", [Template("N")]))
     templates.append(Template("VP", [Template("V")]))
 
-    for t in templates:
-        print(t.tostr())
+    # for t in templates:
+    #    print(t.tostr())
 
     grammar = generate_grammar(templates)
 
-    for rule in grammar:
-        print(rule)
+    #for rule in grammar:
+    #    print(rule)
 
     parser = RRG_earley_parser(grammar, Symbol("SENTENCE"))
     parser.initiate()
 
+    """
     print(parser.G)
     print(parser.terminals)
     print(parser.non_terminals)
+    """
 
+    success = parser.recognizer(["N", "V", "N"])
 
-    parser.recognizer(["V", "N"])
+    if success:
+        parse_trees, trees = parser.get_parse_trees_templates(templates)
+
+        for pt, t in zip(parse_trees, trees):
+            print("new tree")
+            print(t)
+    else:
+        print("cannot parse sentence")
 
 
     """

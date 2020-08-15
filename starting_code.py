@@ -1,6 +1,9 @@
 import argparse
+from copy import deepcopy
+
 import lsc_parser
 import rrg_earley_parser
+from simple_en_templates import templates
 
 class Lexicon:
     def __init__(self):
@@ -209,7 +212,7 @@ def parse_sentence(sentence, approach="max"):
             confs = [comp for comp in confs if len(comp) == max_len]
             configs.append((confs, pred))
 
-    print(configs)
+    # print(configs)
 
     for config, pred in configs:
         for cfg in config:
@@ -296,7 +299,7 @@ def check_pred_arg_compatibility(sentence, predicate, arguments):
                                and "undergoer" in arg_lexicon.get(sentence[arg2])["mr"]
                                and arg1 != predicate and arg2 != predicate and arg1 != arg2])
 
-    print("arg_config: " + str(arg_config))
+    # print("arg_config: " + str(arg_config))
 
     return arg_config
 
@@ -314,7 +317,7 @@ def check_pred_arg_compatibility_thematic(sentence, predicate, arguments):
     sem_reps = list()
     for act_art, indices in pred_lexicon.get(sentence[predicate])["act_art"].items():
         sem_reps.extend([aktionsart[act_art][i] for i in indices])
-    print(sem_reps)
+    # print(sem_reps)
 
     actor_roles = list()
     undergoer_roles = list()
@@ -384,5 +387,20 @@ if __name__ == "__main__":
         for i, line in enumerate(in_file.readlines()):
             line = line.strip("\n")
             print("sentence {}".format(i))
-            parse = [p for p in parse_sentence(line)]
-            print(parse)
+            mr_assignments = [p for p in parse_sentence(line)]
+            for j, ass in enumerate(mr_assignments):
+                temps = deepcopy(templates)
+                print("mr assignment {}:".format(str(j)))
+                print(ass)
+                parser = rrg_earley_parser.RRG_earley_parser(lsc_parser.generate_grammar(temps),
+                                                             rrg_earley_parser.Symbol("SENTENCE"))
+                parser.initiate()
+                parser.recognizer([t for t in ass[2] if t != "" and t is not None])
+                if parser.last_parse:
+                    _, trees = parser.get_parse_trees_templates(temps)
+                    for k, tree in enumerate(trees):
+                        print("lsc parse {}:".format(k))
+                        print(tree)
+                else:
+                    print("no template lsc found")
+            print("==============================")
