@@ -52,6 +52,9 @@ class Template:
     def __str__(self):
         return str([self.name, [ch.tostr() for ch in self.children]])
 
+    def  __eq__(self, other):
+        return type(other) is type(self) and self.name == other.name and self.children == other.children
+
 
 def generate_rules(templates):
     rules = set()

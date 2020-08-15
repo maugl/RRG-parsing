@@ -397,10 +397,12 @@ if __name__ == "__main__":
                 parser.initiate()
                 parser.recognizer([t for t in ass[2] if t != "" and t is not None])
                 if parser.last_parse:
-                    _, trees = parser.get_parse_trees_templates(temps)
-                    for k, tree in enumerate(trees):
+                    parses, trees = parser.get_parse_trees_templates(temps)
+                    for k, (tree, p) in enumerate(zip(trees, parses)):
                         print("lsc parse {}:".format(k))
                         print(tree)
+                        for rule in p:
+                            print(rule)
                 else:
                     print("no template lsc found")
             print("==============================")

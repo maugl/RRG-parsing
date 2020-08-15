@@ -115,7 +115,7 @@ class RRG_earley_parser:
                 z += 1
             # print("states " + str(i))
             # for r, st in enumerate(self.state_set[i]):
-            #    print(str(r), st, st.is_final())
+            #  print(str(r), st, st.is_final())
 
             if len(self.state_set[i]) == 0:
                 self.last_parse = False
@@ -259,24 +259,27 @@ class RRG_earley_parser:
                 else:
                     break
 
-            for j, ind in enumerate(s.parent):
+            j = 0
+            for ind in s.parent:
                 par = self.state_set[ind[0]][ind[1]]
                 if s.production[2] == -1 or par.production[2] == s.production[2] or \
                         templates[par.production[2]].name in [ch.name for ch in templates[s.production[2]].get_leaves()] or\
                         templates[s.production[2]].name in [ch.name for ch in templates[par.production[2]].get_leaves()]:
                     if j == 0:
                         parents[i].append(par)
+                        j += 1
                     else:
                         parses.append(deepcopy(parses[i]))
                         parents.append(deepcopy(parents[i][:-1]))
                         parents[-1].append(par)
+                        j += 1
 
 
         trees = list()
         for parse in parses:
             # filter out artificially added start state
             parse = [s for s in parse if s.production[2] > -1]
-            temps = [templates[s.production[2]] for s in parse]
+            temps = deepcopy([templates[s.production[2]] for s in parse])
             tree = temps[0]
             for temp in temps[1:]:
                 # print(tree, temp)
